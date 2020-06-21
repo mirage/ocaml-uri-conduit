@@ -21,7 +21,11 @@ let () = Ssl.init ()
 
 let chans_of_fd sock =
   let is_open = ref true in
-  let shutdown () = if !is_open then Lwt_ssl.ssl_shutdown sock else Lwt.return_unit in
+  let shutdown () =
+    if !is_open
+    then Lwt_ssl.close_notify sock >|= ignore
+    else Lwt.return_unit
+  in
   let close () = is_open := false; Lwt_ssl.close sock in
   let oc = Lwt_io.make ~mode:Lwt_io.output ~close:shutdown (Lwt_ssl.write_bytes sock) in
   let ic = Lwt_io.make ~mode:Lwt_io.input ~close (Lwt_ssl.read_bytes sock) in
